@@ -1,10 +1,10 @@
-struct TypeSection {}
-struct CodeSection {}
-struct FunctionSection {}
-struct MemorySection {}
-struct DataSection {}
-struct ExportSection {}
-struct ImportSection {}
+struct Type {}
+struct Code {}
+struct Function {}
+struct Memory {}
+struct Data {}
+struct Export {}
+struct Import {}
 
 pub const WASM_MAGIC: &str = "\0asm";
 
@@ -12,6 +12,34 @@ pub const WASM_MAGIC: &str = "\0asm";
 pub struct Module {
     pub magic: String,
     pub version: u32,
+}
+
+#[derive(Eq, PartialEq, Debug, num_derive::FromPrimitive)]
+pub enum SectionCode {
+    Type = 0x01,
+    Import = 0x02,
+    Function = 0x03,
+    Memory = 0x05,
+    Export = 0x07,
+    Code = 0x0a,
+    Data = 0x0b,
+}
+
+#[derive(Eq, PartialEq, Debug)]
+enum Section {
+    Type,
+    Import,
+    Function,
+    Memory,
+    Export,
+    Code,
+    Data,
+}
+
+impl Section {
+    pub fn new(input: &Vec<u8>) -> Section {
+        todo!()
+    }
 }
 
 impl Module {
