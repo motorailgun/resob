@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.83"
+nom = "7.1.3"
+nom-leb128 = "0.2.0"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
 
