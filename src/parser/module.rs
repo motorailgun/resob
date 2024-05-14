@@ -16,9 +16,7 @@ impl Module {
         Ok(Module {
             magic: WASM_MAGIC.into(),
             version,
-            sections: super::section::parse_sections(
-                &input.get(offset..).unwrap_or_else(|| &[]).to_vec(),
-            )?,
+            sections: super::section::parse_sections(&input.get(offset..).unwrap_or(&[]).to_vec())?,
         })
     }
 
@@ -29,7 +27,7 @@ impl Module {
         let magic: String = String::from_utf8_lossy(magic_part).into();
         let version = u32::from_le_bytes(version_part.try_into()?);
 
-        ensure!(magic == WASM_MAGIC.to_string(), "magic number mismatch!");
+        ensure!(magic == *WASM_MAGIC, "magic number mismatch!");
 
         Ok((version, 8usize))
     }
