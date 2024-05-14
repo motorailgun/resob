@@ -153,11 +153,30 @@ pub fn parse_code_section(input: &[u8]) -> IResult<&[u8], Section> {
 }
 
 pub fn parse_function(input: &[u8]) -> IResult<&[u8], Function> {
-    todo!()
+    let (rest, size) = leb128_u32(input)?;
+    let (rest, locals) = parse_vec(parse_function_local, rest)?;
+    let (rest, code) = todo!();
+
+    Ok((
+        rest,
+        Function {
+            locals,
+            code,
+        }
+    ))
 }
 
 pub fn parse_function_local(input: &[u8]) -> IResult<&[u8], FunctionLocal> {
-    todo!()
+    let (rest, count) = leb128_u32(input)?;
+    let (rest, value_type) = parse_value_type(rest)?;
+
+    Ok((
+        rest,
+        FunctionLocal {
+            count,
+            value_type,
+        }
+    ))
 }
 
 pub fn parse_instructions(input: &[u8]) -> IResult<&[u8], Instruction> {
