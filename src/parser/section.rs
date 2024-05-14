@@ -95,23 +95,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn decode_simple_func_section() {
+    fn decode_simple_sections() {
         let wasm = wat::parse_str("(module (func))").unwrap();
         let stripped_body = wasm[8..].to_vec();
-        let (_, section) = Section::parse_section(&stripped_body).unwrap();
+        let sections = parse_sections(&stripped_body).unwrap();
 
-        dbg!(&section);
+        dbg!(&sections);
 
-        let Section {
-            code,
-            size,
-            header_length,
-            body,
-        } = section;
+        let sec_vec = vec![
+            Section {
+                code: SectionCode::Type,
+                size: 0x04,
+                header_length: 2,
+                body: vec![0x01, 0x60, 0x00, 0x00],
+            },
+            Section {
+                code: SectionCode::Function,
+                size: 0x02,
+                header_length: 2,
+                body: vec![0x01, 0x00],
+            },
+            Section {
+                code: SectionCode::Code,
+                size: 0x04,
+                header_length: 2,
+                body: vec![0x01, 0x02, 0x00, 0x0b]
+            }
+        ];
 
-        assert_eq!(code, SectionCode::Type);
-        assert_eq!(size, 0x04);
-        assert_eq!(header_length, 2);
-        assert_eq!(body.len(), size as usize)
+        assert_eq!(sections, sec_vec);
+    }
+
+    #[test]
+    fn decode_simple_type_section() {
+        let wasm = wat::parse_str("(module (func))").unwrap();
+        let stripped_section = wasm[10..14].to_vec();
+        let (_, section) = parse_type_section(&stripped_section).unwrap();
+
+        dbg!(stripped_section);
+
+        assert_eq!(
+            section,
+            TypeSection {
+                function_types: vec![
+                    FuncType {
+                        params: vec![],
+                        results: vec![],
+                    }
+                ],
+            }
+        )
     }
 }
