@@ -87,6 +87,21 @@ fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
     Ok((rest, FuncType { params, results }))
 }
 
+#[derive(Eq, PartialEq, Debug)]
+pub struct FunctionSection {
+    table: Vec<u32>,
+}
+
+// needed for type assertion
+fn f(i: &[u8]) -> IResult<&[u8], u32> {
+    leb128_u32(i)
+}
+
+pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], FunctionSection> {
+    let (rest, table) = parse_vec(f, input)?;
+    Ok((rest, FunctionSection{table}))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -142,5 +157,15 @@ mod tests {
                 ],
             }
         )
+    }
+
+    #[test]
+    fn decode_simple_func_section() {
+        let wasm = wat::parse_str("(module (func))").unwrap();
+        let stripped_section = wasm[16..18].to_vec();
+        let (_, section) = parse_function_section(&stripped_section).unwrap();
+
+        dbg!(stripped_section);
+        assert_eq!(section, FunctionSection{ table: vec![0x00] })
     }
 }
