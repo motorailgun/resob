@@ -73,7 +73,7 @@ pub struct TypeSection {
     pub function_types: Vec<FuncType>,
 }
 
-fn parse_type_section(input: &[u8]) -> IResult<&[u8], TypeSection> {
+pub fn parse_type_section(input: &[u8]) -> IResult<&[u8], TypeSection> {
     let (rest, function_types) = parse_vec(parse_function_type, input)?;
     Ok((rest, TypeSection { function_types }))
 }
