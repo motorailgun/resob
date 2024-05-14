@@ -1,6 +1,5 @@
 use super::types::*;
-use anyhow::Result;
-use nom::{bytes::complete::{tag, take}, number::complete::le_u8, sequence::pair, IResult};
+use nom::{Err::Error, bytes::complete::{tag, take}, error::{self, ErrorKind}, multi::many0, number::complete::le_u8, sequence::pair, IResult};
 use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
@@ -18,48 +17,64 @@ pub enum SectionCode {
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
-pub struct Section {
-    pub code: SectionCode,
-    pub size: u32,
-    pub header_length: usize,
-    pub body: Vec<u8>,
+pub enum Section {
+    Custom,
+    Type(TypeSection),
+    Import,
+    Function(FunctionSection),
+    Memory,
+    Export,
+    Code,
+    Data,
 }
 
-impl Section {
-    pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
-        let (rest, (section_code, section_size)) = pair(le_u8, leb128_u32)(input)?;
-        let header_length = input.len() - rest.len();
 
-        let (input, _header) = take(header_length)(input)?;
-        let (input, body) = take(section_size)(input)?;
+pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
+    let (rest, (section_code, section_size)) = pair(le_u8, leb128_u32)(input)?;
+    let header_length = input.len() - rest.len();
 
-        Ok((
-            input,
-            Section {
-                code: SectionCode::from_u8(section_code).expect("invalid section code"),
-                size: section_size,
-                header_length,
-                body: body.to_vec().clone(),
-            },
-        ))
+    let (input, _header) = take(header_length)(input)?;
+    let (input, body) = take(section_size)(input)?;
+    let scode = SectionCode::from_u8(section_code).unwrap();
+
+    use SectionCode::*;
+    match scode {
+        Type => parse_type_section(body),
+        Function => parse_function_section(body),
+        _ => Err(Error(error::Error::new(input, ErrorKind::Fail))),
     }
 }
 
-pub fn parse_sections(input: &Vec<u8>) -> Result<Vec<Section>> {
-    let mut sections = Vec::new();
-    let mut input = input as &[u8];
+pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {    
+    let mut sections = Sections::new();
+    let (rest, section_vec) = many0(parse_section)(input)?;
 
-    while let Ok((rest, section)) = Section::parse_section(input) {
-        sections.push(section);
-        input = rest;
-    }
+    section_vec.into_iter().for_each(|section| {
+        use Section::*;
 
-    Ok(sections)
+        match section {
+            Custom | Import | Memory | Export | Code | Data => (),
+            Type(sect) => sections.types = Some(sect),
+            Function(sect) => sections.functions = Some(sect),
+        };
+    });
+
+    Ok((rest, sections))
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Sections {
     types: Option<TypeSection>,
+    functions: Option<FunctionSection>,
+}
+
+impl Sections {
+    pub fn new() -> Self {
+        Sections {
+            types: None,
+            functions: None,
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -73,9 +88,9 @@ pub struct TypeSection {
     pub function_types: Vec<FuncType>,
 }
 
-pub fn parse_type_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], TypeSection> {
+pub fn parse_type_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], Section> {
     let (rest, function_types) = parse_vec(parse_function_type, input)?;
-    Ok((rest, TypeSection { function_types }))
+    Ok((rest, Section::Type(TypeSection { function_types })))
 }
 
 fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
@@ -97,9 +112,9 @@ fn f(i: &[u8]) -> IResult<&[u8], u32> {
     leb128_u32(i)
 }
 
-pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], FunctionSection> {
+pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], Section> {
     let (rest, table) = parse_vec(f, input)?;
-    Ok((rest, FunctionSection{table}))
+    Ok((rest, Section::Function(FunctionSection{table})))
 }
 
 #[cfg(test)]
