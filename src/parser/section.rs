@@ -5,6 +5,7 @@ use nom::{
 use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
+use super::types::*;
 
 #[derive(Eq, PartialEq, Debug, FromPrimitive)]
 pub enum SectionCode {
@@ -55,14 +56,6 @@ pub fn parse_sections(input: &Vec<u8>) -> Result<Vec<Section>> {
     Ok(sections)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, FromPrimitive)]
-pub enum ValueType {
-    I32 = 0x7F,
-    I64 = 0x7E,
-    F32 = 0x7D,
-    F64 = 0x7C,
-}
-
 #[derive(Eq, PartialEq, Debug)]
 pub struct FuncType {
     pub params: Vec<ValueType>,
@@ -70,7 +63,7 @@ pub struct FuncType {
 }
 
 #[derive(Eq, PartialEq, Debug)]
-struct TypeSection {
+pub struct TypeSection {
     pub function_types: Vec<FuncType>,
 }
 
@@ -98,14 +91,6 @@ fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
             results,
         }
     ))
-}
-
-fn parse_value_type(input: &[u8]) -> IResult<&[u8], ValueType> {
-    let (rest, val) = le_u8(input)?;
-    match ValueType::from_u8(val) {
-        Some(v) => Ok((rest, v)),
-        None => Err(nom::Err::Failure(nom::error::Error{input, code: nom::error::ErrorKind::Fail})),
-    }
 }
 
 #[cfg(test)]

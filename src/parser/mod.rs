@@ -1,5 +1,6 @@
 pub mod module;
 pub mod section;
+pub mod types;
 
 /* #[derive(Eq, PartialEq, Debug)]
 struct Type {
