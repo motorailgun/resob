@@ -1,6 +1,6 @@
 use super::types::*;
 use anyhow::Result;
-use nom::{bytes::complete::take, multi::count, number::complete::le_u8, sequence::pair, IResult};
+use nom::{bytes::complete::take, number::complete::le_u8, sequence::pair, IResult};
 use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
@@ -58,6 +58,11 @@ pub fn parse_sections(input: &Vec<u8>) -> Result<Vec<Section>> {
 }
 
 #[derive(Eq, PartialEq, Debug)]
+pub struct Sections {
+    types: Option<TypeSection>,
+}
+
+#[derive(Eq, PartialEq, Debug)]
 pub struct FuncType {
     pub params: Vec<ValueType>,
     pub results: Vec<ValueType>,
@@ -69,9 +74,7 @@ pub struct TypeSection {
 }
 
 fn parse_type_section(input: &[u8]) -> IResult<&[u8], TypeSection> {
-    let (body, num_types) = leb128_u32(input)?;
-    let (rest, function_types) = count(parse_function_type, num_types as usize)(body)?;
-
+    let (rest, function_types) = parse_vec(parse_function_type, input)?;
     Ok((rest, TypeSection { function_types }))
 }
 
@@ -80,10 +83,9 @@ fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
     if func != 0x60 {
         return Err(nom::Err::Incomplete(nom::Needed::new(1)));
     }
-    let (rest, num_params) = leb128_u32(body)?;
-    let (rest, params) = count(parse_value_type, num_params as usize)(rest)?;
-    let (rest, num_results) = leb128_u32(rest)?;
-    let (rest, results) = count(parse_value_type, num_results as usize)(rest)?;
+
+    let (rest, params) = parse_vec(parse_value_type, body)?;
+    let (rest, results) = parse_vec(parse_value_type, rest)?;
 
     Ok((rest, FuncType { params, results }))
 }
