@@ -53,9 +53,10 @@ pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
         use Section::*;
 
         match section {
-            Custom | Import | Memory | Export | Code | Data => (),
+            Custom | Import | Memory | Export | Data => (),
             Type(sect) => sections.types = Some(sect),
             Function(sect) => sections.functions = Some(sect),
+            Code(sect) => sections.code = Some(sect),
         };
     });
 
@@ -66,6 +67,7 @@ pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
 pub struct Sections {
     types: Option<TypeSection>,
     functions: Option<FunctionSection>,
+    code: Option<CodeSection>
 }
 
 impl Sections {
@@ -73,6 +75,7 @@ impl Sections {
         Sections {
             types: None,
             functions: None,
+            code: None,
         }
     }
 }
