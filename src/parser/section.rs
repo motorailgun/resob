@@ -1,6 +1,6 @@
 use super::types::*;
 use anyhow::Result;
-use nom::{bytes::complete::take, number::complete::le_u8, sequence::pair, IResult};
+use nom::{bytes::complete::{tag, take}, number::complete::le_u8, sequence::pair, IResult};
 use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
@@ -79,10 +79,7 @@ pub fn parse_type_section(input: &[u8]) -> IResult<&[u8], TypeSection> {
 }
 
 fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
-    let (body, func) = le_u8(input)?;
-    if func != 0x60 {
-        return Err(nom::Err::Incomplete(nom::Needed::new(1)));
-    }
+    let (body, _) = tag([0x60])(input)?;
 
     let (rest, params) = parse_vec(parse_value_type, body)?;
     let (rest, results) = parse_vec(parse_value_type, rest)?;
