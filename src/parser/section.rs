@@ -24,7 +24,7 @@ pub enum Section {
     Function(FunctionSection),
     Memory,
     Export,
-    Code,
+    Code(CodeSection),
     Data,
 }
 
@@ -115,6 +115,50 @@ fn f(i: &[u8]) -> IResult<&[u8], u32> {
 pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], Section> {
     let (rest, table) = parse_vec(f, input)?;
     Ok((rest, Section::Function(FunctionSection{table})))
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub enum Instruction {
+    End,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct FunctionLocal {
+    pub count: u32,
+    pub value_type: ValueType,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct Function {
+    pub locals: Vec<FunctionLocal>,
+    pub code: Vec<Instruction>,
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct CodeSection {
+    pub functions: Vec<Function>,
+}
+
+pub fn parse_code_section(input: &[u8]) -> IResult<&[u8], Section> {
+    let (rest, functions) = parse_vec(parse_function, input)?;
+    Ok((
+        rest,
+        Section::Code( CodeSection {
+            functions
+        }),
+    ))
+}
+
+pub fn parse_function(input: &[u8]) -> IResult<&[u8], Function> {
+    todo!()
+}
+
+pub fn parse_function_local(input: &[u8]) -> IResult<&[u8], FunctionLocal> {
+    todo!()
+}
+
+pub fn parse_instructions(input: &[u8]) -> IResult<&[u8], Instruction> {
+    todo!()
 }
 
 #[cfg(test)]
