@@ -2,7 +2,7 @@ use anyhow::{ensure, Context, Result};
 
 pub const WASM_MAGIC: &str = "\0asm";
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Module {
     pub magic: String,
     pub version: u32,

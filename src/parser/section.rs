@@ -5,7 +5,7 @@ use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-#[derive(Eq, PartialEq, Debug, FromPrimitive)]
+#[derive(Eq, PartialEq, Debug, FromPrimitive, Clone)]
 pub enum SectionCode {
     Custom = 0x00,
     Type = 0x01,
@@ -17,7 +17,7 @@ pub enum SectionCode {
     Data = 0x0b,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Section {
     pub code: SectionCode,
     pub size: u32,
@@ -57,23 +57,23 @@ pub fn parse_sections(input: &Vec<u8>) -> Result<Vec<Section>> {
     Ok(sections)
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Sections {
     types: Option<TypeSection>,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct FuncType {
     pub params: Vec<ValueType>,
     pub results: Vec<ValueType>,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct TypeSection {
     pub function_types: Vec<FuncType>,
 }
 
-pub fn parse_type_section(input: &[u8]) -> IResult<&[u8], TypeSection> {
+pub fn parse_type_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], TypeSection> {
     let (rest, function_types) = parse_vec(parse_function_type, input)?;
     Ok((rest, TypeSection { function_types }))
 }
@@ -87,7 +87,7 @@ fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
     Ok((rest, FuncType { params, results }))
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct FunctionSection {
     table: Vec<u32>,
 }
