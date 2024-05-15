@@ -1,5 +1,15 @@
 pub mod parser;
 
+use std::path;
+use parser::module::Module;
+
 fn main() {
-    println!("Hello, world!");
+    env_logger::init();
+
+    let path = path::Path::new("examples/only_simple_func.wat");
+    let wasm = wat::parse_file(path).unwrap();
+
+    let parsed = Module::decode(&wasm);
+    dbg!(&parsed);
+    dbg!(parsed.unwrap().1);
 }
