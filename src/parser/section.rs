@@ -2,10 +2,11 @@ use super::types::*;
 use log::*;
 use nom::{bytes::complete::{tag, take}, error::{self, ErrorKind}, multi::many0, number::complete::le_u8, sequence::{pair, terminated}, Err::Error, IResult};
 use nom_leb128::leb128_u32;
-use num_derive::FromPrimitive;
+use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
 
-#[derive(Eq, PartialEq, Debug, FromPrimitive, Clone)]
+#[derive(Eq, PartialEq, Debug, FromPrimitive, ToPrimitive, Clone)]
+#[repr(u8)]
 pub enum SectionCode {
     Custom = 0x00,
     Type = 0x01,
@@ -34,18 +35,34 @@ pub struct GenericSection {}
 
 
 pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
-    let (rest, (section_code, section_size)) = pair(le_u8, leb128_u32)(input)?;
+    let (rest, (section_code_raw, section_size)) = pair(le_u8, leb128_u32)(input)?;
     let header_length = input.len() - rest.len();
 
+    debug!("parse_section: section code {:#04x}", section_code_raw);
+    debug!("parse_section: section size:  {section_size}");
+
     let (input, _header) = take(header_length)(input)?;
-    let (input, body) = take(section_size)(input)?;
-    let scode = SectionCode::from_u8(section_code).unwrap();
+    let (input, body) = take(section_size + 2 - header_length as u32)(input)?;
+    let section_code = SectionCode::from_u8(section_code_raw);
+
+    debug!("parse_section: body size: {}", &body.len());
+    debug!("parse_section: section_code: {:?}", section_code);
 
     use SectionCode::*;
-    match scode {
-        Type => parse_type_section(body),
-        Function => parse_function_section(body),
-        _ => Err(Error(error::Error::new(input, ErrorKind::Fail))),
+    match section_code {
+        Some(scode) => Ok((
+            input,
+            match scode {
+                Type => parse_type_section(body)?.1,
+                Function => parse_function_section(body)?.1,
+                Code => parse_code_section(body)?.1,
+                _ => Section::Custom(GenericSection{}),
+            },
+        )),
+        None => {
+            warn!("no known section code: {:#04x}", section_code_raw);
+            Err(Error(error::Error::new(input, ErrorKind::Fail)))?
+        },
     }
 }
 
@@ -217,8 +234,13 @@ pub fn parse_function_local(input: &[u8]) -> IResult<&[u8], FunctionLocal> {
 pub fn parse_instruction(input: &[u8]) -> IResult<&[u8], Instruction> {
     let (rest, byte) = le_u8(input)?;
     let instruction = Instruction::from_u8(byte).ok_or_else(|| {
-        warn!("no known instruction: {:04x}", byte);
-        nom::Err::Failure(nom::error::Error::new(input, ErrorKind::Fail))
+        if byte != 0x0b {
+            warn!("no known instruction: {:#04x}", byte);
+        } else {
+            debug!("code section: reached end (0x0b)");
+        }
+        
+        nom::Err::Error(nom::error::Error::new(input, ErrorKind::AlphaNumeric))
     })?;
 
     Ok((
