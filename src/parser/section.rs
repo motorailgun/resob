@@ -1,5 +1,6 @@
 use super::types::*;
-use nom::{Err::Error, bytes::complete::{tag, take}, error::{self, ErrorKind}, multi::many0, number::complete::le_u8, sequence::pair, IResult};
+use log::*;
+use nom::{bytes::complete::{tag, take}, error::{self, ErrorKind}, multi::many0, number::complete::le_u8, sequence::{pair, terminated}, Err::Error, IResult};
 use nom_leb128::leb128_u32;
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
@@ -18,15 +19,18 @@ pub enum SectionCode {
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub enum Section {
-    Custom,
+    Custom(GenericSection),
     Type(TypeSection),
-    Import,
+    Import(GenericSection),
     Function(FunctionSection),
-    Memory,
-    Export,
+    Memory(GenericSection),
+    Export(GenericSection),
     Code(CodeSection),
-    Data,
+    Data(GenericSection),
 }
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct GenericSection {}
 
 
 pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
@@ -53,7 +57,11 @@ pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
         use Section::*;
 
         match section {
-            Custom | Import | Memory | Export | Data => (),
+            Custom(s) => sections.custom = Some(s),
+            Import(s) => sections.import = Some(s),
+            Memory(s) => sections.memory = Some(s),
+            Export(s) => sections.export = Some(s),
+            Data(s) => sections.data = Some(s),
             Type(sect) => sections.types = Some(sect),
             Function(sect) => sections.functions = Some(sect),
             Code(sect) => sections.code = Some(sect),
@@ -67,7 +75,12 @@ pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
 pub struct Sections {
     types: Option<TypeSection>,
     functions: Option<FunctionSection>,
-    code: Option<CodeSection>
+    code: Option<CodeSection>,
+    custom: Option<GenericSection>,
+    import: Option<GenericSection>,
+    memory: Option<GenericSection>,
+    export: Option<GenericSection>,
+    data: Option<GenericSection>,
 }
 
 impl Sections {
@@ -76,6 +89,11 @@ impl Sections {
             types: None,
             functions: None,
             code: None,
+            custom: None,
+            import: None,
+            memory: None,
+            export: None,
+            data: None,
         }
     }
 }
@@ -120,9 +138,20 @@ pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], Section>
     Ok((rest, Section::Function(FunctionSection{table})))
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, FromPrimitive)]
 pub enum Instruction {
-    End,
+    Unreachable = 0x00,
+    Nop = 0x01,
+    Block = 0x02,
+    Loop = 0x03,
+    If = 0x04,
+    Else = 0x05,
+    Br = 0x0c,
+    BrIf = 0x0d,
+    BrTable = 0x0e,
+    Return = 0x0f,
+    Call = 0x10,
+    CallIndirect = 0x11,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -154,11 +183,17 @@ pub fn parse_code_section(input: &[u8]) -> IResult<&[u8], Section> {
 
 pub fn parse_function(input: &[u8]) -> IResult<&[u8], Function> {
     let (rest, size) = leb128_u32(input)?;
-    let (rest, locals) = parse_vec(parse_function_local, rest)?;
-    let (rest, code) = todo!();
+    let (remining, body) = take(size as usize)(rest)?;
+
+    let (rest, locals) = parse_vec(parse_function_local, &body)?;
+    let (rest, code) = terminated(many0(parse_instruction), tag([0x0b]))(rest)?;
+
+    if rest.len() != 0 {
+        warn!("parse_instruction() didn't consume all the bytes, remaining: {}", rest.len());
+    }
 
     Ok((
-        rest,
+        remining,
         Function {
             locals,
             code,
@@ -179,8 +214,17 @@ pub fn parse_function_local(input: &[u8]) -> IResult<&[u8], FunctionLocal> {
     ))
 }
 
-pub fn parse_instructions(input: &[u8]) -> IResult<&[u8], Instruction> {
-    todo!()
+pub fn parse_instruction(input: &[u8]) -> IResult<&[u8], Instruction> {
+    let (rest, byte) = le_u8(input)?;
+    let instruction = Instruction::from_u8(byte).ok_or_else(|| {
+        warn!("no known instruction: {:04x}", byte);
+        nom::Err::Failure(nom::error::Error::new(input, ErrorKind::Fail))
+    })?;
+
+    Ok((
+        rest,
+        instruction,
+    ))
 }
 
 #[cfg(test)]

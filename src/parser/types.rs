@@ -1,3 +1,4 @@
+use log:: warn;
 use nom::error;
 use nom::multi::count;
 use nom::number::complete::le_u8;
@@ -18,10 +19,13 @@ pub fn parse_value_type(input: &[u8]) -> IResult<&[u8], ValueType> {
     let (rest, val) = le_u8(input)?;
     match ValueType::from_u8(val) {
         Some(v) => Ok((rest, v)),
-        None => Err(nom::Err::Failure(error::Error {
-            input,
-            code: error::ErrorKind::Fail,
-        })),
+        None => {
+            warn!("no matching value type: {:#04x}", val);
+            Err(nom::Err::Failure(error::Error {
+                input,
+                code: error::ErrorKind::Fail,
+            }))
+        },
     }
 }
 
