@@ -1,6 +1,15 @@
+use super::code_section::*;
 use super::types::*;
 use log::*;
-use nom::{bytes::complete::{tag, take}, error::{self, ErrorKind}, multi::many0, number::complete::le_u8, sequence::{pair, terminated}, Err::Error, IResult};
+use nom::{
+    bytes::complete::{tag, take},
+    error::{self, ErrorKind},
+    multi::many0,
+    number::complete::le_u8,
+    sequence::pair,
+    Err::Error,
+    IResult,
+};
 use nom_leb128::leb128_u32;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
@@ -33,7 +42,6 @@ pub enum Section {
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct GenericSection {}
 
-
 pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
     let (rest, (section_code_raw, section_size)) = pair(le_u8, leb128_u32)(input)?;
     let header_length = input.len() - rest.len();
@@ -56,17 +64,17 @@ pub fn parse_section(input: &[u8]) -> IResult<&[u8], Section> {
                 Type => parse_type_section(body)?.1,
                 Function => parse_function_section(body)?.1,
                 Code => parse_code_section(body)?.1,
-                _ => Section::Custom(GenericSection{}),
+                _ => Section::Custom(GenericSection {}),
             },
         )),
         None => {
             warn!("no known section code: {:#04x}", section_code_raw);
             Err(Error(error::Error::new(input, ErrorKind::Fail)))?
-        },
+        }
     }
 }
 
-pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {    
+pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
     let mut sections = Sections::new();
     let (rest, section_vec) = many0(parse_section)(input)?;
 
@@ -152,11 +160,11 @@ fn f(i: &[u8]) -> IResult<&[u8], u32> {
 
 pub fn parse_function_section<'a>(input: &'a [u8]) -> IResult<&'a [u8], Section> {
     let (rest, table) = parse_vec(f, input)?;
-    Ok((rest, Section::Function(FunctionSection{table})))
+    Ok((rest, Section::Function(FunctionSection { table })))
 }
 
 #[derive(Eq, PartialEq, Debug, Clone, FromPrimitive)]
-pub enum Instruction {
+pub enum ControlInstruction {
     Unreachable = 0x00,
     Nop = 0x01,
     Block = 0x02,
@@ -169,84 +177,6 @@ pub enum Instruction {
     Return = 0x0f,
     Call = 0x10,
     CallIndirect = 0x11,
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct FunctionLocal {
-    pub count: u32,
-    pub value_type: ValueType,
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct Function {
-    pub locals: Vec<FunctionLocal>,
-    pub code: Vec<Instruction>,
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct CodeSection {
-    pub functions: Vec<Function>,
-}
-
-pub fn parse_code_section(input: &[u8]) -> IResult<&[u8], Section> {
-    let (rest, functions) = parse_vec(parse_function, input)?;
-    Ok((
-        rest,
-        Section::Code( CodeSection {
-            functions
-        }),
-    ))
-}
-
-pub fn parse_function(input: &[u8]) -> IResult<&[u8], Function> {
-    let (rest, size) = leb128_u32(input)?;
-    let (remining, body) = take(size as usize)(rest)?;
-
-    let (rest, locals) = parse_vec(parse_function_local, &body)?;
-    let (rest, code) = terminated(many0(parse_instruction), tag([0x0b]))(rest)?;
-
-    if rest.len() != 0 {
-        warn!("parse_instruction() didn't consume all the bytes, remaining: {}", rest.len());
-    }
-
-    Ok((
-        remining,
-        Function {
-            locals,
-            code,
-        }
-    ))
-}
-
-pub fn parse_function_local(input: &[u8]) -> IResult<&[u8], FunctionLocal> {
-    let (rest, count) = leb128_u32(input)?;
-    let (rest, value_type) = parse_value_type(rest)?;
-
-    Ok((
-        rest,
-        FunctionLocal {
-            count,
-            value_type,
-        }
-    ))
-}
-
-pub fn parse_instruction(input: &[u8]) -> IResult<&[u8], Instruction> {
-    let (rest, byte) = le_u8(input)?;
-    let instruction = Instruction::from_u8(byte).ok_or_else(|| {
-        if byte != 0x0b {
-            warn!("no known instruction: {:#04x}", byte);
-        } else {
-            debug!("code section: reached end (0x0b)");
-        }
-        
-        nom::Err::Error(nom::error::Error::new(input, ErrorKind::AlphaNumeric))
-    })?;
-
-    Ok((
-        rest,
-        instruction,
-    ))
 }
 
 #[cfg(test)]
@@ -278,8 +208,8 @@ mod tests {
                 code: SectionCode::Code,
                 size: 0x04,
                 header_length: 2,
-                body: vec![0x01, 0x02, 0x00, 0x0b]
-            }
+                body: vec![0x01, 0x02, 0x00, 0x0b],
+            },
         ];
 
         assert_eq!(sections, sec_vec);
@@ -296,12 +226,10 @@ mod tests {
         assert_eq!(
             section,
             TypeSection {
-                function_types: vec![
-                    FuncType {
-                        params: vec![],
-                        results: vec![],
-                    }
-                ],
+                function_types: vec![FuncType {
+                    params: vec![],
+                    results: vec![],
+                }],
             }
         )
     }
@@ -313,6 +241,6 @@ mod tests {
         let (_, section) = parse_function_section(&stripped_section).unwrap();
 
         dbg!(stripped_section);
-        assert_eq!(section, FunctionSection{ table: vec![0x00] })
+        assert_eq!(section, FunctionSection { table: vec![0x00] })
     }
 }

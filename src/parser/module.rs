@@ -21,15 +21,15 @@ impl Module {
                 magic: String::from_utf8_lossy(magic).into(),
                 version,
                 sections,
-            }
+            },
         ))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::section::Sections;
     use super::*;
+    use crate::parser::section::Sections;
 
     #[test]
     fn decode_header_only() -> anyhow::Result<()> {

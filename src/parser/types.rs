@@ -1,4 +1,4 @@
-use log:: warn;
+use log::warn;
 use nom::error;
 use nom::multi::count;
 use nom::number::complete::le_u8;
@@ -25,7 +25,7 @@ pub fn parse_value_type(input: &[u8]) -> IResult<&[u8], ValueType> {
                 input,
                 code: error::ErrorKind::Fail,
             }))
-        },
+        }
     }
 }
 

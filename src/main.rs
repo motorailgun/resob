@@ -1,7 +1,7 @@
 pub mod parser;
 
-use std::path;
 use parser::module::Module;
+use std::path;
 
 fn main() {
     env_logger::init();
