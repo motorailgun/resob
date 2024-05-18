@@ -43,10 +43,10 @@ pub fn parse_function(input: &[u8]) -> IResult<&[u8], Function> {
     let (rest, size) = leb128_u32(input)?;
     let (remining, body) = take(size as usize)(rest)?;
 
-    let (rest, locals) = parse_vec(parse_function_local, &body)?;
+    let (rest, locals) = parse_vec(parse_function_local, body)?;
     let (rest, code) = terminated(many0(parse_instruction), tag([0x0b]))(rest)?;
 
-    if rest.len() != 0 {
+    if !rest.is_empty() {
         warn!(
             "parse_instruction() didn't consume all the bytes, remaining: {}",
             rest.len()
