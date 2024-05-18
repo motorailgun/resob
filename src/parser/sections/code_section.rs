@@ -1,3 +1,4 @@
+use super::instructions::OpArgument;
 use super::types::*;
 use super::Section;
 use log::*;
@@ -14,7 +15,7 @@ use nom_leb128::leb128_u32;
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Instruction {
     opcode: u8,
-    arguments: Vec<u8>,
+    arguments: OpArgument,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
