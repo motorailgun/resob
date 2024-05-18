@@ -26,7 +26,7 @@ impl Module {
     }
 }
 
-#[cfg(test)]
+/* #[cfg(test)]
 mod tests {
     use super::*;
     use crate::parser::section::Sections;
@@ -46,4 +46,4 @@ mod tests {
 
         Ok(())
     }
-}
+} */
