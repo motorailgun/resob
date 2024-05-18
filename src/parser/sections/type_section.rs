@@ -1,5 +1,5 @@
-use super::Section;
 use super::types::*;
+use super::Section;
 use nom::{bytes::complete::tag, IResult};
 
 #[derive(Eq, PartialEq, Debug, Clone)]

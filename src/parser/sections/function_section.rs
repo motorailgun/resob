@@ -1,5 +1,5 @@
-use super::Section;
 use super::types::*;
+use super::Section;
 use nom::IResult;
 use nom_leb128::leb128_u32;
 

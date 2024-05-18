@@ -1,5 +1,5 @@
-use super::Section;
 use super::types::*;
+use super::Section;
 use log::*;
 use nom::{
     bytes::complete::{tag, take},

@@ -1,12 +1,10 @@
-pub mod type_section;
-pub mod types;
 pub mod code_section;
 pub mod function_section;
-
+pub mod type_section;
+pub mod types;
 
 use code_section::*;
 use function_section::*;
-use type_section::*;
 use log::*;
 use nom::{
     bytes::complete::take,
@@ -20,6 +18,7 @@ use nom::{
 use nom_leb128::leb128_u32;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
+use type_section::*;
 
 #[derive(Eq, PartialEq, Debug, FromPrimitive, ToPrimitive, Clone)]
 #[repr(u8)]
