@@ -1,4 +1,4 @@
-use super::section::Section;
+use super::Section;
 use super::types::*;
 use nom::{bytes::complete::tag, IResult};
 

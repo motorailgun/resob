@@ -1,6 +1,12 @@
-use super::code_section::*;
-use super::function_section::*;
-use super::type_section::*;
+pub mod type_section;
+pub mod types;
+pub mod code_section;
+pub mod function_section;
+
+
+use code_section::*;
+use function_section::*;
+use type_section::*;
 use log::*;
 use nom::{
     bytes::complete::take,
