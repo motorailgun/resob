@@ -1,8 +1,9 @@
 use super::code_section::*;
-use super::types::*;
+use super::function_section::*;
+use super::type_section::*;
 use log::*;
 use nom::{
-    bytes::complete::{tag, take},
+    bytes::complete::take,
     error::{self, ErrorKind},
     multi::many0,
     number::complete::le_u8,
@@ -127,46 +128,6 @@ impl Sections {
             data: None,
         }
     }
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct FuncType {
-    pub params: Vec<ValueType>,
-    pub results: Vec<ValueType>,
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct TypeSection {
-    pub function_types: Vec<FuncType>,
-}
-
-pub fn parse_type_section(input: &[u8]) -> IResult<&[u8], Section> {
-    let (rest, function_types) = parse_vec(parse_function_type, input)?;
-    Ok((rest, Section::Type(TypeSection { function_types })))
-}
-
-fn parse_function_type(input: &[u8]) -> IResult<&[u8], FuncType> {
-    let (body, _) = tag([0x60])(input)?;
-
-    let (rest, params) = parse_vec(parse_value_type, body)?;
-    let (rest, results) = parse_vec(parse_value_type, rest)?;
-
-    Ok((rest, FuncType { params, results }))
-}
-
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct FunctionSection {
-    table: Vec<u32>,
-}
-
-// needed for type assertion
-fn f(i: &[u8]) -> IResult<&[u8], u32> {
-    leb128_u32(i)
-}
-
-pub fn parse_function_section(input: &[u8]) -> IResult<&[u8], Section> {
-    let (rest, table) = parse_vec(f, input)?;
-    Ok((rest, Section::Function(FunctionSection { table })))
 }
 
 #[derive(Eq, PartialEq, Debug, Clone, FromPrimitive)]
