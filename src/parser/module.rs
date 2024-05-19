@@ -2,7 +2,7 @@ use nom::{bytes::complete::tag, number::complete::le_u32, IResult};
 
 pub const WASM_MAGIC: &str = "\0asm";
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Module {
     pub magic: String,
     pub version: u32,

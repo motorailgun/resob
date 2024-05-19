@@ -8,5 +8,5 @@ pub struct MemArg {
 
 pub fn parse_memory_instruction(input: &[u8]) -> nom::IResult<&[u8], Instruction> {
     let (rest, op) = nom::number::complete::le_u8(input)?;
-    
+    todo!()
 }

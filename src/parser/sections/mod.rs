@@ -34,7 +34,7 @@ pub enum SectionCode {
     Data = 0x0b,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Section {
     Custom(GenericSection),
     Type(TypeSection),
@@ -103,7 +103,7 @@ pub fn parse_sections(input: &[u8]) -> IResult<&[u8], Sections> {
     Ok((rest, sections))
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Sections {
     types: Option<TypeSection>,
     functions: Option<FunctionSection>,

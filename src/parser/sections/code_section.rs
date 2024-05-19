@@ -12,10 +12,10 @@ use nom::{
 };
 use nom_leb128::leb128_u32;
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Instruction {
-    opcode: u8,
-    arguments: OpArgument,
+    pub opcode: u8,
+    pub arguments: OpArgument,
 }
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -24,13 +24,13 @@ pub struct FunctionLocal {
     pub value_type: ValueType,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Function {
     pub locals: Vec<FunctionLocal>,
     pub code: Vec<Instruction>,
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct CodeSection {
     pub functions: Vec<Function>,
 }
