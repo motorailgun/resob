@@ -80,11 +80,11 @@ pub fn parse_instruction(input: &[u8]) -> IResult<&[u8], Instruction> {
         // parametric instruction (5.4.2)
         0x1a..=0x1b => todo!(),
         // variable instruction (5.4.3)
-        0x20..=0x24 => todo!(),
+        0x20..=0x24 => super::instructions::variable::parse_variable_instruction(input),
         // memory instruction (5.4.4)
-        0x28..=0x40 => todo!(),
+        0x28..=0x40 => super::instructions::memory::parse_memory_instruction(input),
         // numeric instruction (5.4.5)
-        0x41..=0xbf => todo!(),
+        0x41..=0xbf => super::instructions::numeric::parse_numeric_instruction(input),
         // unknown
         _ => Err(nom::Err::Failure(nom::error::Error::new(
             input,
