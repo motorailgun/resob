@@ -11,6 +11,7 @@ Playing with Wasm binary (WIP)
             -- type_section
             -- code_section
             / instructions - parser code for instructions; used to decode code section
+/ examples - WebAssembly Text Format (WAT)s for tests
 ```
 
 ## links
