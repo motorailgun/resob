@@ -6,7 +6,7 @@ use std::path;
 fn main() {
     env_logger::init();
 
-    let path = path::Path::new("examples/simple_func_with_local.wat");
+    let path = path::Path::new("examples/simple_func_add.wat");
     let wasm = wat::parse_file(path).unwrap();
 
     let parsed = Module::decode(&wasm);
