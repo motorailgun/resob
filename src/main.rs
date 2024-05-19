@@ -1,4 +1,5 @@
 pub mod parser;
+pub mod executor;
 
 use parser::module::Module;
 use std::path;
